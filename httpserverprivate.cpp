@@ -148,6 +148,11 @@ void HTTPServerPrivate::startProcessLoop()
         if( result == SOCKET_ERROR )
         {
             cerr << "Recv failed: " << result << endl;
+            cerr << "Error code:  " << WSAGetLastError() << endl;
+            cerr << "Buffer: ";
+            cerr.write( buf, max_client_buffer_size );
+            cerr << endl;
+
             close();
             return;
         }
