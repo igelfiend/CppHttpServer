@@ -2,8 +2,8 @@
 
 int main()
 {
-    HTTPServer server;
+    HttpServer server;
 
-    server.start();
+    server.start( "127.0.0.1", "8000" );
     return 0;
 }

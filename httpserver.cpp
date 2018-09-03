@@ -2,11 +2,20 @@
 
 #include "httpserverprivate.h"
 
-int HTTPServer::start()
+HttpServer::~HttpServer()
 {
+    delete server;
+}
 
-    HTTPServerPrivate server;
-    server.start( "127.0.0.1", "8000" );
+int HttpServer::start(const std::string &path, const std::string &port)
+{
+    if( server )
+    {
+        delete server;
+    }
+
+    server = new HTTPServerPrivate();
+    server->start( path, port );
 
     return 0;
 }

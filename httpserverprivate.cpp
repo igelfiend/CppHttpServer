@@ -5,7 +5,6 @@
 
 #include <fstream> // for reading file
 
-#include <vector>
 #include "utilities.h"
 
 // Required for stable freeaddrinfo in MinGW
@@ -19,7 +18,6 @@
 using std::cerr;
 using std::cout;
 using std::endl;
-using std::vector;
 
 int HTTPServerPrivate::start(const std::string &path, const std::string &port)
 {
@@ -127,7 +125,7 @@ void HTTPServerPrivate::startProcessLoop()
     char buf[max_client_buffer_size];
     SOCKET client_socket = INVALID_SOCKET;
 
-    cout << "Request processing started." << endl;
+    cout << "Server started." << endl;
     while( true )
     {
         // Receiving incomming connection
@@ -141,17 +139,11 @@ void HTTPServerPrivate::startProcessLoop()
 
         int result = recv(client_socket, buf, max_client_buffer_size, 0);
 
-        std::stringstream response;      // response storage
-        std::stringstream response_body; // response body storage
-
         // On receving data error
         if( result == SOCKET_ERROR )
         {
             cerr << "Recv failed: " << result << endl;
             cerr << "Error code:  " << WSAGetLastError() << endl;
-            cerr << "Buffer: ";
-            cerr.write( buf, max_client_buffer_size );
-            cerr << endl;
 
             close();
             return;
@@ -167,36 +159,8 @@ void HTTPServerPrivate::startProcessLoop()
             buf[result] = '\0';
             std::cout << "Received: " << buf << endl;
 
-//            string filename = getFilenameFromResponse( buf );
-            string filename = "D:/cat.jpg";
-
-            if( filename.empty() )
-            {
-                cerr << "Get request error." << endl;
-                return;
-            }
-
-            __int64 size = 0;
-            char *data = readFile( filename, size );
-
-            if( !data )
-            {
-                cerr << "Error reading file." << endl;
-                return;
-            }
-
-            response_body.write( data, size );
-
-            std::cout << "content length: " << response_body.str().length() << endl;
-
-            // Generating response
-            response    << "HTTP/1.1 200 OK\r\n"
-                        << "Version: HTTP/1.1\r\n"
-                        << "Host: 127.0.0.1\r\n"
-                        << "Connection: close\r\n"
-                        << "Content-Type: application/octet-stream\r\n"
-                        << "Content-Disposition: form-data; filename=\"cat.jpg\"; name=\"cat\"\r\n\r\n"
-                        << response_body.str() << "\r\n";
+            // generate response for client
+            std::stringstream response = generateResponse( buf );
 
             // Sending data to client
             result = send(  client_socket, response.str().c_str(),
@@ -221,7 +185,7 @@ std::string HTTPServerPrivate::getFilenameFromResponse(char response[])
 
     if( lines.size() == 0 )
     {
-        cerr << "Receiving empty response data" << endl;
+        cerr << "Received empty response data." << endl;
         return string();
     }
 
@@ -229,13 +193,13 @@ std::string HTTPServerPrivate::getFilenameFromResponse(char response[])
 
     if( fragments.size() < 3 )
     {
-        cerr << "Response first line has to few parameters" << endl;
+        cerr << "Response first line has to few parameters." << endl;
         return string();
     }
 
     string filepath = fragments[ 1 ];
+    filepath.erase( 0, 1 );
 
-    cout << "Filepath: " << filepath << endl;
     return filepath;
 }
 
@@ -255,11 +219,56 @@ char *HTTPServerPrivate::readFile( const string &filepath, __int64 &size )
 
     char *buffer = new char[ size ];
 
-    cout << "readed " << size << " bytes" << std::endl;
     is.read( buffer, size );
     is.close();
 
     return buffer;
+}
+
+std::stringstream HTTPServerPrivate::generateResponse(char buffer[])
+{
+    string filename = getFilenameFromResponse( buffer );
+
+    if( filename.empty() )
+    {
+        cerr << "Get request error." << endl;
+        return generateResponseWithError();
+    }
+
+    __int64 size = 0;
+    char *data = readFile( filename, size );
+
+    if( !data )
+    {
+        cerr << "Error reading file." << endl;
+        return generateResponseWithError();
+    }
+
+    std::stringstream response;
+    std::stringstream responseBody;
+
+    responseBody.write( data, size );
+
+    // Generating response
+    response    << "HTTP/1.1 200 OK\r\n"
+                << "Version: HTTP/1.1\r\n"
+                << "Host: 127.0.0.1\r\n"
+                << "Connection: close\r\n"
+                << "Content-Type: application/octet-stream\r\n"
+                << "Content-Disposition: form-data; filename=\""
+                << filename << "\";\r\n\r\n"
+                << responseBody.str() << "\r\n";
+
+    return response;
+}
+
+std::stringstream HTTPServerPrivate::generateResponseWithError()
+{
+    std::stringstream response;
+    response    << "HTTP/1.1 404 Not found\r\n"
+                << "Version: HTTP/1.1\r\n"
+                << "Host: 127.0.0.1\r\n";
+    return response;
 }
 
 void HTTPServerPrivate::close()
