@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include <sys/types.h>
+#include <sys/stat.h>
 
 namespace Utilities
 {
@@ -32,6 +34,22 @@ std::vector<std::string> split(const std::string& s, char seperator)
 
     return output;
 }
+
+bool dirExists( std::string &path )
+{
+    struct stat info;
+
+    if(    ( stat( path.c_str(), &info ) == 0 )
+        && ( info.st_mode & S_IFDIR ) )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 }
 
 #endif // UTILITIES_H

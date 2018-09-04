@@ -21,21 +21,33 @@ using std::endl;
 
 int HTTPServerPrivate::start(const std::string &path, const std::string &port)
 {
+    // Checking share path
+    if( !Utilities::dirExists( sharefoulderPath ) )
+    {
+        cerr << sharefoulderPath << ": directory doesn\'t exists." << endl;
+        return -1;
+    }
+
     // Initing address
     if( !initAddress( path, port ) )
     {
-        return -1;
+        return -2;
     }
 
     // Initing socket
     if( !initSocket() )
     {
-        return -2;
+        return -3;
     }
 
     // Start catching request and responding to them
     startProcessLoop();
     return 0;
+}
+
+void HTTPServerPrivate::setSharefoulderPath(const std::string &path)
+{
+    sharefoulderPath = path;
 }
 
 bool HTTPServerPrivate::initAddress(const std::string &path, const std::string &port)
@@ -79,27 +91,27 @@ bool HTTPServerPrivate::initAddress(const std::string &path, const std::string &
 bool HTTPServerPrivate::initSocket()
 {
     // Creating socket
-    listen_socket = socket( addr->ai_family,
-                            addr->ai_socktype,
-                            addr->ai_protocol );
+    listenSocket = socket( addr->ai_family,
+                           addr->ai_socktype,
+                           addr->ai_protocol );
 
     // On error free memory
-    if(listen_socket == INVALID_SOCKET)
+    if( listenSocket == INVALID_SOCKET )
     {
         cerr << "Error at socket: " << WSAGetLastError() << endl;
-        listen_socket = 0;
+        listenSocket = 0;
 
         close();
         return false;
     }
 
     // Binding socket to IP-address
-    int result = bind( listen_socket,
+    int result = bind( listenSocket,
                        addr->ai_addr,
                        int( addr->ai_addrlen ) );
 
     // If binding failed, free memory
-    if (result == SOCKET_ERROR)
+    if( result == SOCKET_ERROR )
     {
         cerr << "bind failed with error: " << WSAGetLastError() << endl;
 
@@ -108,7 +120,7 @@ bool HTTPServerPrivate::initSocket()
     }
 
     // Initing listner socket
-    if (listen(listen_socket, SOMAXCONN) == SOCKET_ERROR)
+    if( listen( listenSocket, SOMAXCONN ) == SOCKET_ERROR )
     {
         cerr << "listen failed with error: " << WSAGetLastError() << endl;
 
@@ -121,23 +133,24 @@ bool HTTPServerPrivate::initSocket()
 
 void HTTPServerPrivate::startProcessLoop()
 {
-    const int max_client_buffer_size = 1024;
-    char buf[max_client_buffer_size];
-    SOCKET client_socket = INVALID_SOCKET;
+    const int maxClientBufferSize = 1024;
+    char buf[ maxClientBufferSize ];
+    SOCKET clientSocket = INVALID_SOCKET;
 
-    cout << "Server started." << endl;
+    cout << "server started." << endl;
+    cout << "sharing path: " << sharefoulderPath << endl;
     while( true )
     {
         // Receiving incomming connection
-        client_socket = accept(listen_socket, nullptr, nullptr);
-        if (client_socket == INVALID_SOCKET)
+        clientSocket = accept(listenSocket, nullptr, nullptr);
+        if (clientSocket == INVALID_SOCKET)
         {
             cerr << "Accept failed: " << WSAGetLastError() << endl;
             close();
             return;
         }
 
-        int result = recv(client_socket, buf, max_client_buffer_size, 0);
+        int result = recv(clientSocket, buf, maxClientBufferSize, 0);
 
         // On receving data error
         if( result == SOCKET_ERROR )
@@ -156,14 +169,14 @@ void HTTPServerPrivate::startProcessLoop()
         else if( result > 0 )
         {
             // Pasting endline in end of data in buffer.
-            buf[result] = '\0';
+            buf[ result ] = '\0';
             std::cout << "Received: " << buf << endl;
 
             // generate response for client
             std::stringstream response = generateResponse( buf );
 
             // Sending data to client
-            result = send(  client_socket, response.str().c_str(),
+            result = send(  clientSocket, response.str().c_str(),
                             response.str().length(), 0);
 
             // If there are error on sending data
@@ -173,7 +186,7 @@ void HTTPServerPrivate::startProcessLoop()
             }
 
             // Closing connection with client
-            closesocket(client_socket);
+            closesocket(clientSocket);
         }
     }
 }
@@ -236,7 +249,7 @@ std::stringstream HTTPServerPrivate::generateResponse(char buffer[])
     }
 
     __int64 size = 0;
-    char *data = readFile( filename, size );
+    char *data = readFile( sharefoulderPath + "/" + filename, size );
 
     if( !data )
     {
@@ -274,6 +287,6 @@ std::stringstream HTTPServerPrivate::generateResponseWithError()
 void HTTPServerPrivate::close()
 {
     if( addr ) freeaddrinfo( addr );
-    if( listen_socket != 0 ) closesocket( listen_socket );
+    if( listenSocket != 0 ) closesocket( listenSocket );
     WSACleanup(); // uploading ws2_32.dll
 }

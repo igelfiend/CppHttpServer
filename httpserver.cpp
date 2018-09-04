@@ -15,7 +15,13 @@ int HttpServer::start(const std::string &path, const std::string &port)
     }
 
     server = new HTTPServerPrivate();
+    server->setSharefoulderPath( sharefolderPath );
     server->start( path, port );
 
     return 0;
+}
+
+void HttpServer::setSharefoulderPath(const std::string &path)
+{
+    sharefolderPath = path;
 }

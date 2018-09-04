@@ -15,15 +15,24 @@ using std::vector;
 class HTTPServerPrivate
 {
 public:
-    HTTPServerPrivate(): listen_socket(0), addr(nullptr){}
+    HTTPServerPrivate(): listenSocket(0), addr(nullptr){}
 
     /**
      * @brief start - starting loop for processing clients requests.
      * @param path - host path.
      * @param port - host port.
-     * @return
+     * @return  0  - success finish;
+     *          -1 - dir path error;
+     *          -2 - address initerror;
+     *          -3 - socket init error.
      */
     int start(const string &path, const string &port);
+
+    /**
+     * @brief setSharefoulderPath - setting path for sharing files.
+     * @param path - dir path for sharing.
+     */
+    void setSharefoulderPath( const string &path );
 
 private:
     /**
@@ -80,12 +89,14 @@ private:
     /**
      * @brief listen_socket - Socket for listner.
      */
-    SOCKET listen_socket;
+    SOCKET listenSocket;
 
     /**
      * @brief addr - Storing information about listner IP-address.
      */
     struct addrinfo* addr;
+
+    string sharefoulderPath;
 };
 
 #endif // HTTPSERVERPRIVATE_H

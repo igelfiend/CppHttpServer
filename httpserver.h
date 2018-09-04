@@ -19,15 +19,29 @@ public:
      * @brief start start server at path:port.
      * @param path - path of the server.
      * @param port - port of the server.
-     * @return 0 when finished.
+     * @return  0  - success finish;
+     *          -1 - dir path error;
+     *          -2 - address initerror;
+     *          -3 - socket init error.
      */
     int start( const std::string &path, const std::string &port );
+
+    /**
+     * @brief setSharefoulderPath - setting path for sharing files.
+     * @param path - dir path to share place.
+     */
+    void setSharefoulderPath( const std::string &path );
 
 private:
     /**
      * @brief server - api.
      */
     HTTPServerPrivate *server;
+
+    /**
+     * @brief sharefolderPath - path for sharing.
+     */
+    std::string sharefolderPath;
 };
 
 #endif // HTTPSERVER_H
