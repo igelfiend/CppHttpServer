@@ -1,10 +1,24 @@
+#include <iostream>
+#include <string>
+
 #include "httpserver.h"
 
-int main()
-{
-    HttpServer server;
+using namespace std;
 
-    server.setSharefoulderPath( "D:/Pics2" );
-    server.start( "127.0.0.1", "8000" );
+int main(int argc, char *argv[])
+{
+    if( argc < 4 )
+    {
+        cerr << "to few arguments count" << endl;
+        return -1;
+    }
+
+    string strAddres( argv[ 1 ] );
+    string strPort  ( argv[ 2 ] );
+    string dirname  ( argv[ 3 ] );
+
+    HttpServer server;
+    server.setSharefoulderPath( dirname );
+    server.start( strAddres, strPort );
     return 0;
 }

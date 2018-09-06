@@ -21,7 +21,7 @@ public:
      * @param port - port of the server.
      * @return  0  - success finish;
      *          -1 - dir path error;
-     *          -2 - address initerror;
+     *          -2 - address init error;
      *          -3 - socket init error.
      */
     int start( const std::string &path, const std::string &port );

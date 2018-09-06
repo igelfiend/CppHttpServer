@@ -270,7 +270,7 @@ std::stringstream HTTPServerPrivate::generateResponse(char buffer[])
                 << "Content-Type: application/octet-stream\r\n"
                 << "Content-Disposition: form-data; filename=\""
                 << filename << "\";\r\n\r\n"
-                << responseBody.str() << "\r\n";
+                << responseBody.str();
 
     return response;
 }
